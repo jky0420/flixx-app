@@ -70,6 +70,10 @@ async function displayPopularTVshows() {
 async function displayMovieDetails() {
   const movieId = window.location.search.split('=')[1];
   const movie = await fetchAPIData(`movie/${movieId}`);
+
+  // Overlay for background image
+  displayBackdrop('movie', movie.backdrop_path);
+
   const div = document.createElement('div');
   div.innerHTML = `<div class="details-top">
   <div>
@@ -119,6 +123,135 @@ async function displayMovieDetails() {
 }
 
 
+ //Display TV Show Details
+async function displayShowDetails() {
+  const showId = window.location.search.split('=')[1];
+  const show = await fetchAPIData(`tv/${showId}`);
+  
+
+  // Overlay for background image
+  displayBackdrop('tv', show.backdrop_path);
+
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="details-top">
+  <div>
+    ${
+      show.poster_path 
+    ? `<img
+    src="https://image.tmdb.org/t/p/w500${show.poster_path}"
+    class="card-img-top"
+    alt="${show.name}"
+  />` : `<img
+  src="images/no-image.jpg"
+  class="card-img-top"
+  alt="${show.name}"
+/>`
+    }
+  </div>
+  <div>
+    <h2>${show.name}</h2>
+    <p>
+      <i class="fas fa-star text-primary"></i>
+      ${show.vote_average.toFixed(1)} / 10
+    </p>
+    <p class="text-muted">Last Air Date: ${show.last_air_date}</p>
+    <p>
+      ${show.overview}
+    </p>
+    <h5>Genres</h5>
+    <ul class="list-group">
+      ${show.genres.map((genre) => `<li>${genre.name}</li>`).join('')}
+    </ul>
+    <a href="${show.homepage}" target="_blank" class="btn">Visit Movie Homepage</a>
+  </div>
+</div>
+<div class="details-bottom">
+  <h2>Movie Info</h2>
+  <ul>
+    <li><span class="text-secondary">Number of Episodes:</span> ${show.number_of_episodes}</li>
+    <li><span class="text-secondary">Last Episode To Air:</span> ${show.last_episode_to_air.name}</li>
+    <li><span class="text-secondary">Status:</span> ${show.status}</li>
+  </ul>
+  <h4>Production Companies</h4>
+  <div class="list-group">${show.production_companies.map((company) => `<span>${company.name}</span>`).join('')}</div>
+</div>`;
+  
+  document.querySelector('#show-details').appendChild(div);
+}
+
+
+
+ //Display backdrop on details Pages
+function displayBackdrop(type, backgroundPath) {
+  const overlayDiv = document.createElement('div');
+  overlayDiv.style.backgroundImage = `url(https://image.tmdb.org/t/p/original/${backgroundPath})`;
+  overlayDiv.style.backgroundPosition = 'center';
+  overlayDiv.style.backgroundRepeat = 'no-repeat';
+  overlayDiv.style.height = '100vh';
+  overlayDiv.style.width = '100vw';
+  overlayDiv.style.position = 'absolute';
+  overlayDiv.style.top = '0';
+  overlayDiv.style.left = '0';
+  overlayDiv.style.zIndex = '-1';
+  overlayDiv.style.opacity = '0.3';
+  if (type === 'movie') {
+    document.querySelector('#movie-details').appendChild(overlayDiv);
+  } else {
+    document.querySelector('#show-details').appendChild(overlayDiv);
+  }
+  
+};
+
+
+//Display slider Movies
+async function displaySlider() {
+  const { results } = await fetchAPIData('movie/now_playing');
+  console.log(results);
+  results.forEach((movie) => {
+    const div = document.createElement('div');
+    div.classList.add('swiper-slide');
+
+    div.innerHTML = `
+    <a href="movie-details.html?id=${movie.id}">
+      <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}" />
+    </a>
+      <h4 class="swiper-rating">
+        <i class="fas fa-star text-secondary"></i> ${movie.vote_average} / 10
+        </h4>
+    `;
+    document.querySelector('.swiper-wrapper').appendChild(div);
+    initSwiper();
+  });
+}
+
+function initSwiper() {
+  const swiper = new Swiper('.swiper', {
+    
+    slidesPerView: 1,
+    spaceBetween: 30,
+    freeMode: true,
+    loop: true,
+
+  
+    autoPlay: {
+      delay: 4000,
+      disableOnInteraction: false,
+    },
+    breakpoints: {
+      500: {
+        slidesPerView: 2
+      },
+      700: {
+        slidesPerView: 3
+      },
+      1200: {
+        slidesPerView: 4
+      },
+    }
+  })
+}
+
+
 // Fetch data from TMDB API
 async function fetchAPIData(endpoint) {
   // Register yor key at https://www.themoviedb.org/settings/api and enter here
@@ -165,6 +298,7 @@ function init() {
   switch (global.currentPage) {
     case '/':
     case '/index.html':
+      displaySlider();
       displayPopularMovies();
       break;
     case '/shows.html':
@@ -174,7 +308,7 @@ function init() {
       displayMovieDetails();
       break;
     case '/tv-details.html':
-      console.log('TV details');
+      displayShowDetails();
       break;
     case '/search.html':
       console.log('Search');
